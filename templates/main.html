@@ -1,0 +1,316 @@
+<!Doctype HTML>
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.8.0/css/bulma.min.css">
+        <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+
+        <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+        <script src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
+
+        <style>
+            .start-button {
+                width: 50vw; 
+                height: 50vw; 
+                position: fixed; 
+                top: calc( 45vh - 25vw ); 
+                left: 25vw; 
+                border-radius: 50%; 
+                font-size: 15vw; 
+                border: 0px; 
+                color: #000; 
+                background-color: #009b72cc;
+            }
+            .start-button.active.focus,
+            .start-button.active:focus,
+            .start-button.focus,
+            .start-button.focus:active,
+            .start-button:active:focus,
+            .start-button:focus {
+                outline: none;
+                box-shadow: none;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div style="background-image: url({{ url_for('static', filename='bg5.jpg') }}); width: 100vw; height: 100vh;">
+
+            <!-- <input id="speech-input" type="file" accept="audio/mp3" style="display: none;" capture> -->
+            <input type="file" id="input-images" accept="image/*" style="display: none;" name="files" multiple><br><br>
+            <audio id="record-audio"></audio>
+
+            <div style="position: fixed; text-align: center; width: 100vw; top: 2vh; color: #ffffffcc; font-size: 15vw;">Thrive<br><div style="font-size: 7vw; color: #ffffff;">Empower your business</div></div>
+            
+            <button id="go-btn" value="stop" class="button start-button" style="outline: none; box-shadow: none;">Start</button>
+
+            <div style="position: fixed; text-align: center; width: 100vw; top: 70vh; color: #fff; background-color: #000; font-size: 4vw;" id="output-text"></div>
+            <button id="upload-images" class="button is-success" style="display: none; position: fixed; width: 50vw; height: 5vh; top: 90vh; left: 25vw; ">Upload Images</button>
+        </div>
+    </body>
+
+    <div id="preview-modal" class="modal">
+        <div class="modal-background"></div>
+        <div class="modal-card">
+          <header class="modal-card-head">
+            <p class="modal-card-title">Preview</p>
+          <button class="delete" aria-label="close" onclick="$('#preview-modal').removeClass('is-active')"></button>
+          </header>
+          <section class="modal-card-body">
+              <div id="preview-content" class="column is-fullwidth"></div>
+          </section>
+          <footer class="modal-card-foot">
+            <button class="button is-primary">POST !</button>
+          </footer>
+        </div>
+      </div>
+
+</html>
+
+
+
+<script src="https://cdn.rawgit.com/mattdiamond/Recorderjs/08e7abd9/dist/recorder.js"></script>
+<script>
+
+
+
+    var recordedAudio = $("#record-audio")
+
+    URL = window.URL || window.webkitURL;
+    var gumStream;
+    var rec;
+    //stream from getUserMedia() 
+    //Recorder.js object 
+    var input;
+    //MediaStreamAudioSourceNode we'll be recording 
+    // shim for AudioContext when it's not avb. 
+    var AudioContext = window.AudioContext || window.webkitAudioContext;
+    var audioContext = new AudioContext;
+    //new audio context to help us record 
+
+    var constraints = {
+        audio: true,
+        video: false
+    }
+
+    $(document).ready(() => {
+        // navigator.mediaDevices.getUserMedia({audio: true})
+        // .then(stream => {handlerFunction(stream)})
+
+        $("#upload-images").click(() => {
+            $("#input-images").trigger("click")
+        })
+
+        function ftrigger(imgs){
+            // console.log(imgs)
+            var _text = window.gentext;
+            var tl = parseInt(_text.length / imgs.length)
+            var html_gen = "<div class='title is-3'>Garden Salad</div>"
+            var pnt = 0
+            for(var k = 0; k < imgs.length-1; k++){
+                html_gen += "<div class='column'><img src='" + imgs[k] +  "' /></div>"
+                html_gen += "<div class='column'>" + _text.substring(pnt, pnt + tl) + "</div>"
+                pnt += tl
+            }
+            html_gen += "<img src='" + imgs[imgs.length-1] +  "' />"
+            html_gen += "<div class='column'>" + _text.substring(pnt) + "</div>"
+            $("#preview-content").html(html_gen)
+            $("#preview-modal").addClass("is-active")
+        }
+
+        $("#input-images").change((e) => {
+            // var fd = new FormData() 
+            setTimeout(() => {
+                var images = []
+                var len = e.target.files.length
+                var a = 0
+                for(var i = 0; i < len; i++){
+                    // fd.append("image_" + i, e.target.files[i])
+                    // console.log(e.target.files[i])
+                    let _data = e.target.files[i]
+
+                    let reader = new FileReader();
+
+                    reader.onload = function (_e) {
+                        // $('#blah')
+                        //     .attr('src', e.target.result)
+                        //     .width(150)
+                        //     .height(200);
+                        images.push(_e.target.result)
+                        a += 1
+                        if(a == len){
+                            ftrigger(images)
+                        }
+                    };
+                    reader.readAsDataURL(_data);
+                    console.log(_data)
+                    // images.push(URL.createObjectURL(e.target.files[i]))
+                }
+            }, 1000)
+            // console.log(images)
+
+            // preview-modal
+        })
+
+        function startRecording() {
+
+            var constraints = { audio: true }
+            navigator.mediaDevices.getUserMedia(constraints).then(function(stream) {
+                audioContext = new AudioContext();
+
+                gumStream = stream;
+                
+                input = audioContext.createMediaStreamSource(stream);
+
+                rec = new Recorder(input,{numChannels:1})
+                
+                rec.record()
+
+                console.log("Recording started");
+
+            })
+            .catch(function(err) {
+                alert(err)
+                recordButton.disabled = false;
+                stopButton.disabled = true;
+                pauseButton.disabled = true
+            });
+        }
+
+        $("#go-btn").click(() => {
+            // $("#speech-input").trigger("click")
+            if( $("#go-btn").val() == "stop" ) {
+                $("#go-btn").val("recording")
+                $("#go-btn").html("Stop")
+                $("#go-btn").css("background", "#f4442ecc")
+                $("#upload-images").css("display", "none")
+                // audioChunks = []
+                // rec.record()
+                startRecording()
+            }else{
+                $("#go-btn").val("stop")
+                $("#go-btn").html("Start")
+                $("#go-btn").css("background", "#009b72cc")
+                // rec.stop()
+                stopRecording()
+            }
+        })
+
+        function stopRecording() {
+            rec.stop(); //stop microphone access 
+
+            rec.exportWAV(blob => {
+                var fd = new FormData()
+                fd.append("voice", blob)
+
+                fetch("/generates", {
+                    method: "POST",
+                    body: fd,
+                })
+                .then(res => res.json())
+                .then(function(json){
+                    console.log(json)
+                    $("#upload-images").css("display", "block")
+                    $("#output-text").html("Your words: " + json["text"])
+                    window.gentext = json["gen"]
+                })
+            });
+        }
+    })
+    
+    
+
+    
+
+    // $("#speech-input").change(e => {
+    //     var fd = new FormData()
+    //     fd.append("voice", e.target.files[0])
+
+    //     fetch("/generates", {
+    //         method: "POST",
+    //         body: fd,
+    //     })
+    //     .then(res => res.json())
+    //     .then(function(json){
+
+    //     })
+    // })
+
+    // function handlerFunction(stream){
+    //     rec = new MediaRecorder(stream);
+    //     rec.ondataavailable = e => {
+    //         // alert(rec.audioBitsPerSecond)
+    //         audioChunks.push(e.data)
+    //         if(rec.state == "inactive") {
+    //             let blob = new Blob(audioChunks, {type: 'audio/wav'});
+    //             // recordedAudio.src = URL.createObjectURL(blob)
+    //             // recordedAudio.controls = false
+    //             // recordedAudio.autoplay = true
+
+
+
+    //             var fd = new FormData()
+    //             fd.append("voice", blob)
+
+    //             fetch("/generates", {
+    //                 method: "POST",
+    //                 body: fd,
+    //             })
+    //             .then(res => res.json())
+    //             .then(function(json){
+
+    //             })
+    //         }
+    //     }
+    // }
+
+    // navigator.mediaDevices.getUserMedia(constraints).then(function(stream) {
+    //     // console.log("getUserMedia() success, stream created, initializing Recorder.js ..."); 
+    //     /* assign to gumStream for later use */
+    //     gumStream = stream;
+    //     /* use the stream */
+    //     input = audioContext.createMediaStreamSource(stream);
+    //     /* Create the Recorder object and configure to record mono sound (1 channel) Recording 2 channels will double the file size */
+    //     rec = new Recorder(input, {
+    //         numChannels: 1
+    //     })
+    //     console.log(rec)
+    //     rec.record()
+    //     console.log(rec)
+    //     // console.log(rec)
+    //     //start the recording process 
+    //     // rec.record()
+    //     // console.log("Recording started");
+    // })
+    // .catch(function(err) {
+    //     alert(err)
+    //     //enable the record button if getUserMedia() fails 
+    //     recordButton.disabled = false;
+    //     stopButton.disabled = true;
+    //     pauseButton.disabled = true
+    // });
+    /* Disable the record button until we get a success or fail from getUserMedia() */
+
+    // recordButton.disabled = true;
+    // stopButton.disabled = false;
+    // pauseButton.disabled = false
+
+    /* We're using the standard promise based getUserMedia()
+
+    https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia */
+
+    
+    // .catch(function(err) {
+    //     //enable the record button if getUserMedia() fails 
+    //     recordButton.disabled = false;
+    //     stopButton.disabled = true;
+    //     pauseButton.disabled = true
+    // });
+
+
+</script>
