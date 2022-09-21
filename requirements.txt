@@ -56,7 +56,7 @@ pyparsing==2.4.7
 Pyrebase==3.0.27
 PySoundFile==0.9.0.post1
 python-dateutil==2.8.1
-python-jwt==2.0.1
+python-jwt==3.3.4
 pytz==2020.1
 pytzdata==2019.3
 requests==2.23.0
